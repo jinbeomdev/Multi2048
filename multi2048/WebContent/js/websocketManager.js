@@ -1,16 +1,25 @@
 var webSocket;
 
 function connect() {
-    webSocket = new WebSocket("ws://localhost:8081/multi2048/WebSocket");
+    webSocket = new WebSocket("ws://localhost:8090/multi2048/WebSocket");
     
     webSocket.onmessage = function(event) {
         document.getElementById("status").innerText = event.data;
     };
+
+    webSocket.onopen = function(event) {
+        document.getElementById("status").innerText = event;
+    }
     
-    document.getElementById("status").innerText = "webSocket is connected";
+    webSocket.onclose = function(event) {
+        document.getElementById("status").innerText = event;
+    }
+
+    webSocket.onerror = function(event) {
+        document.getElementById("status").innerText = event;
+    }
 };
 
 function disconnect() {
     webSocket.close();
-    document.getElementById("status").innerText = "webSocket is disconnected";
 };
