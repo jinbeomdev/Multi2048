@@ -20,12 +20,13 @@ public class WebSocket {
 	}
 	
 	@OnMessage
-	public String handleMessage(String message) {
+	public String handleMessage(String message) {		
+		System.out.println("receive from client : " + message);
+		
+		grid.merge(message);
 		if(grid.isFull()) {
 			grid.addRandomlyTile();
 		}
-		
-		System.out.println("receive from client : " + message);
 		
 		Gson gson = new Gson();
 		String str = gson.toJson(grid);

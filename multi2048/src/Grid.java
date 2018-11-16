@@ -45,4 +45,53 @@ public class Grid {
 	public boolean isFull() {
 		return numAvailableCells != 0;
 	}
+	
+	public void merge(String strDir) {
+		final int[] dx = {0, 0, -1, 1};
+		final int[] dy = {1, -1, 0, 0};
+		int intDir;
+		
+		if(strDir.equals("ArrowDown")) {
+			intDir = 0;
+		} else if(strDir.equals("ArrowUp")) {
+			intDir = 1;
+		} else if(strDir.equals("ArrowLeft")) {
+			intDir = 2;
+		} else { //equals ArrowRight
+			intDir = 3;
+		}
+		
+		while (true) {
+			int cntMove = 0;
+			
+			for (int y = 0; y < size; y++) {
+				for (int x = 0; x < size; x++) {
+					int nextX = x + dx[intDir];
+					int nextY = y + dy[intDir];
+
+					if (nextX < 0 || nextX >= size || nextY < 0 || nextY >= size) { // index exception
+						continue;
+					}
+					
+					if(cells[y][x] == 0) { //don't need to move
+						continue;
+					}
+					
+					if(cells[nextY][nextX] == cells[y][x]) {
+						cells[nextY][nextX] *= 2;
+						cells[y][x] = 0;
+						cntMove++;
+					} else if(cells[nextY][nextX] == 0) {
+						cells[nextY][nextX] = cells[y][x];
+						cells[y][x] = 0;
+						cntMove++;
+					}
+				}
+			}
+			
+			if(cntMove == 0) {
+				break;
+			}
+		}
+	}
 }
