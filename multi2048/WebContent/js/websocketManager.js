@@ -2,7 +2,7 @@ var webSocket;
 
 function connect() {
     webSocket = new WebSocket("ws://localhost:8090/multi2048/WebSocket");
-    
+
     webSocket.onmessage = function(event) {
         var cells = document.getElementsByClassName("grid-cell");
         var data = JSON.parse(event.data);
@@ -29,6 +29,7 @@ function connect() {
 
     webSocket.onopen = function(event) {
         document.getElementById("status").innerText = event;
+        webSocket.send("connected");
     }
     
     webSocket.onclose = function(event) {
