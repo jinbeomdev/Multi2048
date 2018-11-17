@@ -43,12 +43,47 @@ public class Grid {
 	}
 	
 	public boolean isFull() {
-		return numAvailableCells != 0;
+		return numAvailableCells == 0;
+	}
+
+	public void _merge(int dir, int y, int x) {
+		final int[] dx = {0, 0, -1, 1};
+		final int[] dy = {1, -1, 0, 0};
+
+		if(cells[y][x] == 0) { //don't need to move
+			return;
+		}
+
+		int nextY;
+		int nextX;
+		while(true) {
+			nextY = y + dy[dir];
+			nextX = x + dx[dir];
+
+			if(nextY < 0 || nextY >= size ||
+			   nextX < 0 || nextX >= size) {
+				return;
+			}
+
+			if(cells[nextY][nextX] == 0) {
+				cells[nextY][nextX] = cells[y][x];
+				cells[y][x] = 0;
+			} else {
+				break;
+			}
+
+			y = nextY;
+			x = nextX;
+		}
+
+		if(cells[nextY][nextX] == cells[y][x]) {
+			cells[nextY][nextX] = cells[y][x] * 2;
+			cells[y][x] = 0;
+			numAvailableCells++;
+		}
 	}
 	
 	public void merge(String strDir) {
-		final int[] dx = {0, 0, -1, 1};
-		final int[] dy = {1, -1, 0, 0};
 		int intDir;
 		
 		if(strDir.equals("ArrowDown")) {
@@ -59,38 +94,25 @@ public class Grid {
 			intDir = 2;
 		} else { //equals ArrowRight
 			intDir = 3;
-		}
+		}		
 		
-		while (true) {
-			int cntMove = 0;
-			
-			for (int y = 0; y < size; y++) {
+		if(intDir == 0) { //Down
+			for (int y = size - 1; y >= 0; y--) {
 				for (int x = 0; x < size; x++) {
-					int nextX = x + dx[intDir];
-					int nextY = y + dy[intDir];
-
-					if (nextX < 0 || nextX >= size || nextY < 0 || nextY >= size) { // index exception
-						continue;
-					}
-					
-					if(cells[y][x] == 0) { //don't need to move
-						continue;
-					}
-					
-					if(cells[nextY][nextX] == cells[y][x]) {
-						cells[nextY][nextX] *= 2;
-						cells[y][x] = 0;
-						cntMove++;
-					} else if(cells[nextY][nextX] == 0) {
-						cells[nextY][nextX] = cells[y][x];
-						cells[y][x] = 0;
-						cntMove++;
-					}
+					_merge(intDir, y, x);
 				}
 			}
-			
-			if(cntMove == 0) {
-				break;
+		} else if(intDir == 3) { //Right
+			for (int y = 0; y < size; y++) {
+				for(int x = size - 1; x >= 0; x--) {
+					_merge(intDir, y, x);
+				}
+			}
+		} else { //Up, Left
+			for(int y = 0; y < size; y++) {
+				for(int x = 0; x < size; x++) {
+					_merge(intDir, y, x);
+				}
 			}
 		}
 	}
