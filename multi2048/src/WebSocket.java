@@ -1,3 +1,7 @@
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -6,47 +10,60 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /*
- * TODO : 2명 동시 플레이!
- * TODO : 로직 에러 수정
- * TODO : 애니메이션 추가
- * TODO : 랭킹 구현
- * TODO : 디자인 구현
- * TODO : 2명 동시 플레이 구현 -> 한 명 접속시 대기, 2명 접속시 게임 시작 -> 방을 하나 더 만듬
+ * TODO : 두 명이 동시에 플레이 가능하게 하기
+ * TODO : 여러 명이 두 명씩 매칭되게 하기
+ * TODO : 일정 시간 동안 랜더링 되도록 하기(멀티플레이를 위함)
+ * TODO : 애니메이션 효과 추가하기
+ * TODO : 랭킹 추가 (DB 연동)
+ * TODO : 웹 디자인 하기
  */
 
 @ServerEndpoint("/WebSocket")
 public class WebSocket {
-	private Session session;
-	private Grid grid;
+	static final int sizeUsers = 2;
+	static private SessionUser[] sessionUsers = new SessionUser[2];
 	
 	@OnOpen
 	public void handleOpen(Session session) {
-		this.session = session;
-		grid = new Grid();
 		System.out.println("client is now connected");
+		
+		for(int user = 0; user < sizeUsers; user++) {
+			if(sessionUsers[user] == null) {
+				sessionUsers[user] = new SessionUser(session, new Grid());
+				session.getUserProperties().put("numUser", user);
+				return;
+			}
+		}
+		
+		System.out.println("server is full");
 	}
 	
 	@OnMessage
-	public String handleMessage(String message) {		
-		System.out.println("receive from client : " + message);
+	public String handleMessage(String message, Session session) {
+		int numUser = (int)session.getUserProperties().get("numUser");
+		
+		System.out.println("receive from client : " + numUser + "," + message);
 		
 		if(message.equals("connected")) {
-			return toJson();
+			return toJson(numUser);
 		}
 
-		grid.merge(message);
-		if(!grid.isFull()) {
-			grid.addRandomlyTile();
+		sessionUsers[numUser].getGrid().merge(message);
+		if(!sessionUsers[numUser].getGrid().isFull()) {
+			sessionUsers[numUser].getGrid().addRandomlyTile();
 		}
 
-		return toJson();
+		return toJson(numUser);
 	}
 	
 	@OnClose
-	public void handleClose() {
+	public void handleClose(Session session) {
 		System.out.println("client is now disconnected");
+		int numUser = (int)session.getUserProperties().get("numUser");
+		sessionUsers[numUser] = null;
 	}
 	
 	@OnError
@@ -54,9 +71,15 @@ public class WebSocket {
 		t.printStackTrace();
 	}
 
-	public String toJson() {
-		Gson gson = new Gson();
-		String str = gson.toJson(grid);
-		return str;
+	public String toJson(int numUser) {
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		Grid[] players = new Grid[2];
+		players[0] = sessionUsers[numUser].getGrid();
+		if(sessionUsers[Math.abs(numUser - 1)] != null) {
+			players[1] = sessionUsers[Math.abs(numUser - 1)].getGrid();
+		}
+		String ret = gson.toJson(players);
+		//System.out.println(ret);
+		return ret;
 	}
 }
