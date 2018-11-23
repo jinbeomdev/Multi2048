@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,74 +13,86 @@ import javax.websocket.server.ServerEndpoint;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-/*
- * TODO : 두 명이 동시에 플레이 가능하게 하기
- * TODO : 여러 명이 두 명씩 매칭되게 하기
- * TODO : 일정 시간 동안 랜더링 되도록 하기(멀티플레이를 위함)
- * TODO : 애니메이션 효과 추가하기
- * TODO : 랭킹 추가 (DB 연동)
- * TODO : 웹 디자인 하기
- */
-
 @ServerEndpoint("/WebSocket")
 public class WebSocket {
-	static final int sizeUsers = 2;
-	static private SessionUser[] sessionUsers = new SessionUser[2];
+	static private Gson gson = new GsonBuilder().setPrettyPrinting().create();
+	static private List<SessionUser> userList = Collections.synchronizedList(new ArrayList<>());
+
+	private SessionUser sessionUser;
+
+	public void WebSocket() {
+		sessionUser = null;
+	}
 	
 	@OnOpen
-	public void handleOpen(Session session) {
-		System.out.println("client is now connected");
-		
-		for(int user = 0; user < sizeUsers; user++) {
-			if(sessionUsers[user] == null) {
-				sessionUsers[user] = new SessionUser(session, new Grid());
-				session.getUserProperties().put("numUser", user);
-				return;
-			}
+	public void handleOpen(Session session) throws IOException {
+		System.out.println("handleOpen() is called, Session = " + session.toString());
+		if(sessionUser == null) {
+			sessionUser = new SessionUser(session);
+		} else {
+			System.out.println("when calling handleOpen(), SessionUser is not null");
+		}
+
+		if(userList.isEmpty()) {
+			userList.add(sessionUser);
+			return;
+		}
+
+		SessionUser lastUser = userList.get(userList.size() - 1);
+
+		if(lastUser.getGameStart() == false) {
+			System.out.println(lastUser.getSession().toString() + "," + sessionUser.getSession().toString() + " are matched");
+			lastUser.matchPlay(sessionUser);
+			sessionUser.matchPlay(lastUser);
+			
+			lastUser.getSession().getBasicRemote().sendText(parseGrid(lastUser, sessionUser));
+			session.getBasicRemote().sendText(parseGrid(sessionUser, lastUser)); 
 		}
 		
-		System.out.println("server is full");
+		userList.add(sessionUser);
 	}
 	
 	@OnMessage
-	public String handleMessage(String message, Session session) {
-		int numUser = (int)session.getUserProperties().get("numUser");
+	public void handleMessage(String message, Session session) throws IOException {
+		sessionUser.getGrid().merge(message);
+		sessionUser.getGrid().addRandomlyTile();
 		
-		System.out.println("receive from client : " + numUser + "," + message);
+		SessionUser enemySessionUser = sessionUser.getEnemySession();
 		
-		if(message.equals("connected")) {
-			return toJson(numUser);
+		if(enemySessionUser == null) {
+			return;
 		}
-
-		sessionUsers[numUser].getGrid().merge(message);
-		if(!sessionUsers[numUser].getGrid().isFull()) {
-			sessionUsers[numUser].getGrid().addRandomlyTile();
-		}
-
-		return toJson(numUser);
+		
+		enemySessionUser.getSession().getBasicRemote().sendText(parseGrid(enemySessionUser, sessionUser));
+		session.getBasicRemote().sendText(parseGrid(sessionUser, enemySessionUser));
 	}
 	
 	@OnClose
 	public void handleClose(Session session) {
-		System.out.println("client is now disconnected");
-		int numUser = (int)session.getUserProperties().get("numUser");
-		sessionUsers[numUser] = null;
+		System.out.println("handleClose() is called, Session" + session.toString() + "");
+		SessionUser enemySession = sessionUser.getEnemySession();
+		
+		if(enemySession != null) {
+			enemySession.setEnemySession(null);	
+		}
+		
+		sessionUser.setEnemySession(null);
+		userList.remove(sessionUser);
+		sessionUser = null;
 	}
 	
 	@OnError
 	public void handleError(Throwable t) {
 		t.printStackTrace();
 	}
-
-	public String toJson(int numUser) {
-		Gson gson = new GsonBuilder().setPrettyPrinting().create();
-		Grid[] players = new Grid[2];
-		players[0] = sessionUsers[numUser].getGrid();
-		if(sessionUsers[Math.abs(numUser - 1)] != null) {
-			players[1] = sessionUsers[Math.abs(numUser - 1)].getGrid();
-		}
-		String ret = gson.toJson(players);
-		//System.out.println(ret);
+	
+	public String parseGrid(SessionUser mySessionUser, SessionUser enemySessionUser) {
+		System.out.println("parseGrid() is called");
+		String ret = "{\"myGrid\":";
+		ret += gson.toJson(mySessionUser.getGrid());
+		ret += ", \"enemyGrid\":";
+		ret += gson.toJson(enemySessionUser.getGrid());
+		ret += "}";
 		return ret;
 	}
 }
