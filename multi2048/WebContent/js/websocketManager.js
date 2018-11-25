@@ -1,10 +1,11 @@
 var webSocket;
+var matched = false;
 
 webSocket = new WebSocket("ws://localhost:8090/multi2048/WebSocket");
 
 webSocket.onopen = function(event) {
-    document.getElementById("status").innerText = event;
     console.log("onopen()");
+    document.getElementById("status").innerText = event;
 }
 
 webSocket.onclose = function(event) {
@@ -14,6 +15,9 @@ webSocket.onclose = function(event) {
 
 webSocket.onmessage = function(event) {
     console.log("onmessage()");
+
+    $( "#preloader" ).hide();
+    
     document.getElementById("status").innerText = event.data;
     var data = JSON.parse(event.data);
     updateGrid(data);
