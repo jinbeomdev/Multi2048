@@ -1,11 +1,11 @@
 var webSocket;
-var matched = false;
 
 webSocket = new WebSocket("ws://localhost:8090/multi2048/WebSocket");
 
 webSocket.onopen = function(event) {
     console.log("onopen()");
     document.getElementById("status").innerText = event;
+    webSocket.send("id:" + id);
 }
 
 webSocket.onclose = function(event) {
@@ -16,11 +16,21 @@ webSocket.onclose = function(event) {
 webSocket.onmessage = function(event) {
     console.log("onmessage()");
 
-    $( "#preloader" ).hide();
-    
-    document.getElementById("status").innerText = event.data;
     var data = JSON.parse(event.data);
-    updateGrid(data);
+    var dataType = data.dataType;
+    
+    document.getElementById("status").innerText = event;
+
+    if(dataType == "grid") {
+        updateGrid(data);
+    } else if (dataType == "gameStart") {
+        $("#preloader").hide();
+    } else if(dataType == "enemyOut") {
+        $("#enemyOut").show();
+        $('#enemyOut').slideDown();
+    } else if(dataType == "message") {
+        document.getElementById("messageTextArea").value += data.message + "\n";
+    }
 }
 
 webSocket.onerror = function(event) {
@@ -28,8 +38,7 @@ webSocket.onerror = function(event) {
 }
 
 function updateGrid(data) {
-    document.getElementById("status").innerText = data;
-    
+    //document.getElementById("status").innerText = data;
     var myCells = document.getElementsByClassName("cell");
     myCells[0].innerText = data.myGrid.cells[0][0];
     myCells[1].innerText = data.myGrid.cells[0][1];
@@ -63,4 +72,7 @@ function updateGrid(data) {
     myCells[29].innerText = data.enemyGrid.cells[3][1];
     myCells[30].innerText = data.enemyGrid.cells[3][2];
     myCells[31].innerText = data.enemyGrid.cells[3][3];
+
+    document.getElementById("best-score").innerText = data.myGrid.bestScore;
+    document.getElementById("enemy-best-score").innerText = data.enemyGrid.bestScore;
 }

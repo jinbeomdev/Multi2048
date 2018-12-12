@@ -1,4 +1,7 @@
-<!doctype html>
+<%@page import="java.sql.*"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -21,21 +24,47 @@
         <div class="inner">
           <h3 class="masthead-brand">Multi2048</h3>
           <nav class="nav nav-masthead justify-content-center">
-            <a class="nav-link active" href="#">Home</a>
-            <a class="nav-link" href="ranking.jsp">Ranking</a>
+            <a class="nav-link" href="index.html">Home</a>
+            <a class="nav-link active" href="#">Ranking</a>
           </nav>
         </div>
       </header>
 
       <main role="main" class="inner cover">
-        <form class="form-signin" method="POST" action="login">
-          <h1 class="cover-heading">Just Play!</h1><br>
-          <label for="inputEmail" class="sr-only">Email address</label>
-          <input type="email" id="inputEmail" class=	"form-control" name="email" placeholder="Email address" required autofocus>
-          <label for="inputPassword" class="sr-only">Password</label>
-          <input type="password" id="inputPassword" class="form-control" name="password" placeholder="Password" required>
-          <button class="btn btn-lg btn-primary btn-block" type="submit">Play</button>
-        </form>
+            <h2>Ranking</h2>
+            <div class="table-responsive">
+              <table class="table table-striped table-sm">
+                <thead>
+                  <tr>
+                    <th>NO.</th>
+                    <th>ID</th>
+                    <th>SCORE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <%
+                  	Connection conn = null;
+    				Statement stmt = null;
+    				ResultSet rs = null;
+    				
+                  	Class.forName("com.mysql.cj.jdbc.Driver");
+                    conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/multi2048?serverTimezone=UTC", "root", "1q2w3e4r!!");	
+    				stmt = conn.createStatement();
+    				rs = stmt.executeQuery("select * from best_score order by score desc");
+    				
+    				while(rs.next()) {
+                  %>
+					<tr>
+					  <td><%= rs.getRow() %></td>
+					  <td><%= rs.getString("id") %></td>
+					  <td><%= rs.getInt("score") %></td>
+					</tr>
+				  <%
+    				}
+				  %>
+                </tbody>
+              </table>
+            </div>
       </main>
 
       <footer class="mastfoot mt-auto">
@@ -54,4 +83,3 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
   </body>
 </html>
-

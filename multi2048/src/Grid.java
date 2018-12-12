@@ -3,11 +3,14 @@ public class Grid {
 	private static final int startTile = 2;
 	private int numAvailableCells;
 	private int[][] cells;
+	private int bestScore;
+	private int value;
 	
 	public Grid() {
 		numAvailableCells = size * size;
 		cells = new int[size][size];
 		initGrid();
+		bestScore = 0;
 	}
 	
 	private void initGrid() {
@@ -26,7 +29,9 @@ public class Grid {
 			return;
 		}
 		
-		addRandomlyTile(); //if it can't put a tile in cell, try again!.
+		if(!isFull()) {
+			addRandomlyTile(); //if it can't put a tile in cell, try again!.
+		}
 	}
 	
 	public void setCells(int row, int col, int value) {
@@ -35,6 +40,10 @@ public class Grid {
 	
 	public int[][] getCells() {
 		return cells;
+	}
+	
+	public int getBestScore() {
+		return bestScore;
 	}
 	
 	private boolean isEmpty(int row, int col) {
@@ -78,13 +87,15 @@ public class Grid {
 
 		if(cells[nextY][nextX] == cells[y][x]) {
 			cells[nextY][nextX] = cells[y][x] * 2;
+			value += cells[nextY][nextX];
 			cells[y][x] = 0;
 			numAvailableCells++;
 		}
 	}
 	
 	public void merge(String strDir) {
-		int intDir;
+		int intDir = -1;
+		value = 0;
 		
 		if(strDir.equals("ArrowDown")) {
 			intDir = 0;
@@ -92,9 +103,11 @@ public class Grid {
 			intDir = 1;
 		} else if(strDir.equals("ArrowLeft")) {
 			intDir = 2;
-		} else { //equals ArrowRight
+		} else if(strDir.equals("ArrowRight")){ //equals ArrowRight
 			intDir = 3;
-		}		
+		} else {
+			return;
+		}
 		
 		if(intDir == 0) { //Down
 			for (int y = size - 1; y >= 0; y--) {
@@ -115,5 +128,7 @@ public class Grid {
 				}
 			}
 		}
+		
+		bestScore += value;
 	}
 }

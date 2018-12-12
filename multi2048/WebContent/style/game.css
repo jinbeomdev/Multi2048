@@ -49,6 +49,13 @@
 	margin-right: 0;
 }
 
+#enemy-best-score {
+  display: inline-block;
+  align-content: center;
+  align-items: center;
+  align-self: center;
+}
+
 .enemy-container .cell {
 	width: 30px;
     height: 30px;
